@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#087f9b"><meta name="description" content="Labasan Daily Operations Monitoring"><link rel="manifest" href="./manifest.webmanifest"><title>Labasan Daily Monitoring</title>
+<style>
+:root{font-family:Arial,sans-serif;color:#17242b;background:#edf2f4}*{box-sizing:border-box}body{margin:0}.bar{position:sticky;top:0;background:#fff;padding:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 12px #0001;z-index:2}.bar b{margin-right:auto}.bar button,.bar input,.bar select{padding:9px;border:1px solid #b9c8ce;border-radius:7px;font:inherit}.bar button{background:#087f9b;color:white;border:0;font-weight:bold}.wrap{max-width:1300px;margin:16px auto;padding:0 10px}.sheet{background:white;padding:18px;border:1px solid #d3dde1;box-shadow:0 4px 18px #0001}.heading{text-align:center;font-weight:bold;margin:6px 0 14px}h3{font-size:13px;margin:18px 0 5px;text-transform:uppercase}table{border-collapse:collapse;width:100%;font-size:12px;margin-bottom:10px}th,td{border:1px solid #52636b;padding:4px;text-align:center}th{background:#edf3f5}td input{width:100%;min-width:0;border:0;text-align:center;font:inherit;padding:5px;background:transparent}td input:focus{outline:1px solid #087f9b;background:#eafaff}.scroll{overflow-x:auto}.scroll table{min-width:560px}.status{font-size:12px;color:#26724d}@media(max-width:700px){.bar b{width:100%}.bar label{flex:1;min-width:120px}.bar input,.bar select{width:100%}.bar button{flex:1}.sheet{padding:10px}.wrap{padding:0 5px}table{font-size:10px}}@media print{.bar{display:none}.wrap{margin:0;padding:0}.sheet{border:0;box-shadow:none;padding:0}body{background:white}}
+</style></head><body>
+<div class="bar"><b>Labasan Daily Monitoring</b><label>Date <input id="date" type="date"></label><button onclick="save()">Save</button><button onclick="fresh()">New</button><button onclick="print()">Print</button><label>History <select id="history" onchange="load(this.value)"><option value="">Select date</option></select></label><button onclick="removeRecord()">Delete</button><button id="install" hidden onclick="install()">Install app</button><span class="status" id="status"></span></div>
+<div class="wrap"><main class="sheet" id="sheet"><div class="heading">DAILY OPERATIONS MONITORING SHEET<br><small>LABASAN</small></div>
+<h3>Gensets / Pumps</h3><div class="scroll"><table><thead><tr><th>Equipment</th><th>Previous</th><th>12AM–8AM</th><th>Diff.</th><th>8AM–4PM</th><th>Diff.</th><th>4PM–12MN</th><th>Diff.</th></tr></thead><tbody id="gensets"></tbody></table></div>
+<h3>Land / Lake Monitoring</h3><div class="scroll"><table><thead><tr><th>Time</th><th>Land</th><th>Lake</th><th>Remarks</th><th>Weather Conditions</th></tr></thead><tbody id="water"></tbody></table></div>
+<h3>Fuel Sounding – Liters</h3><div class="scroll"><table><thead><tr><th>Fuel Tank</th><th>Previous</th><th>1st Present</th><th>2nd Present</th><th>3rd Present</th></tr></thead><tbody id="fuel"></tbody></table></div>
+<h3>Garbage</h3><table><thead><tr><th>Description</th><th>1st</th><th>2nd</th><th>3rd</th></tr></thead><tbody id="garbage"></tbody></table>
+</main></div><script>
+const $=id=>document.getElementById(id),times=['12AM','1AM','2AM','3AM','4AM','5AM','6AM','7AM','8AM','9AM','10AM','11AM','12NN','1PM','2PM','3PM','4PM','5PM','6PM','7PM','8PM','9PM','10PM','11PM'];
+function cells(n){return Array.from({length:n},()=>'<td><input></td>').join('')}
+function row(name,n){return '<tr><td>'+name+'</td>'+cells(n)+'</tr>'}
+$('gensets').innerHTML=['GENSET #1','GENSET #2','GENSET #3','GENSET #4','PUMP #1','PUMP #2','PUMP #3','PUMP #4','PUMP #5','PUMP #6','PUMP #7','TPO / TOH'].map(x=>row(x,7)).join('');
+$('water').innerHTML=times.map(t=>'<tr><td>'+t+'</td>'+cells(4)+'</tr>').join('');
+$('fuel').innerHTML=['STORAGE TANK #1','STORAGE TANK #2','STORAGE TANK #3','STORAGE TANK #4','SERVICE TANK #1','SERVICE TANK #2','SKID TANK #1','SKID TANK #2','SKID TANK #3','SKID TANK #4','TOTAL','FUEL CONSUMPTION','PERCENTAGE (%)','WORKING BALANCE'].map(x=>row(x,4)).join('');
+$('garbage').innerHTML=['PREVIOUS','ACCUMULATED','DISPOSE','BALANCE'].map(x=>row(x,3)).join('');
+const key='labasan_daily_monitor_records';
+function all(){try{return JSON.parse(localStorage.getItem(key)||'{}')}catch(e){return {}}}
+function refresh(sel=''){let r=all();$('history').innerHTML='<option value="">Select date</option>'+Object.keys(r).sort().reverse().map(d=>'<option>'+d+'</option>').join('');$('history').value=sel}
+function save(){let d=$('date').value;if(!d){$('status').textContent='Choose a date first.';return}let vals=[...$('sheet').querySelectorAll('input')].map(x=>x.value),r=all();r[d]=vals;localStorage.setItem(key,JSON.stringify(r));refresh(d);$('status').textContent='Saved on this device.'}
+function load(d){if(!d)return;let v=all()[d]||[];[...$('sheet').querySelectorAll('input')].forEach((x,i)=>x.value=v[i]||'');$('date').value=d;$('status').textContent='Record loaded.'}
+function fresh(){if(!confirm('Start a new blank sheet?'))return;[...$('sheet').querySelectorAll('input')].forEach(x=>x.value='');$('date').value=new Date().toISOString().slice(0,10);$('history').value='';$('status').textContent='New sheet ready.'}
+function removeRecord(){let d=$('history').value;if(!d)return; if(confirm('Delete '+d+'?')){let r=all();delete r[d];localStorage.setItem(key,JSON.stringify(r));refresh();fresh()}}
+$('date').value=new Date().toISOString().slice(0,10);refresh();
+let deferred=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;$('install').hidden=false});async function install(){if(deferred){deferred.prompt();await deferred.userChoice;deferred=null}else $('status').textContent='Use browser menu > Install app / Add to Home Screen.'}
+if('serviceWorker'in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+</script></body></html>
